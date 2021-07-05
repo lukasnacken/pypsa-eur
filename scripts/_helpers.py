@@ -125,6 +125,14 @@ def load_network_for_plots(fn, tech_costs, config, combine_hydro_ps=True):
 
     return n
 
+def update_p_nom_max(n):
+    # if extendable carriers (solar/onwind/...) have capacity >= 0,
+    # e.g. existing assets from the OPSD project are included to the network,
+    # the installed capacity might exceed the expansion limit.
+    # Hence, we update the assumptions.
+    
+    n.generators.p_nom_max = n.generators[['p_nom_min', 'p_nom_max']].max(1)
+
 def aggregate_p_nom(n):
     return pd.concat([
         n.generators.groupby("carrier").p_nom_opt.sum(),
@@ -156,7 +164,6 @@ def aggregate_p_curtailed(n):
     ])
 
 def aggregate_costs(n, flatten=False, opts=None, existing_only=False):
-    from six import iterkeys, itervalues
 
     components = dict(Link=("p_nom", "p0"),
                       Generator=("p_nom", "p"),
@@ -167,8 +174,8 @@ def aggregate_costs(n, flatten=False, opts=None, existing_only=False):
 
     costs = {}
     for c, (p_nom, p_attr) in zip(
-        n.iterate_components(iterkeys(components), skip_empty=False),
-        itervalues(components)
+        n.iterate_components(components.keys(), skip_empty=False),
+        components.values()
     ):
         if c.df.empty: continue
         if not existing_only: p_nom += "_opt"
