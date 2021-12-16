@@ -83,6 +83,7 @@ def plot_map(n, ax=None, attribute='p_nom', opts={}):
     line_colors = {'cur': "purple",
                    'exp': mpl.colors.rgb2hex(to_rgba("red", 0.7), True)}
     tech_colors = opts['tech_colors']
+    map_boundaries = opts['map']['boundaries']
 
     if attribute == 'p_nom':
         # bus_sizes = n.generators_t.p.sum().loc[n.generators.carrier == "load"].groupby(n.generators.bus).sum()
