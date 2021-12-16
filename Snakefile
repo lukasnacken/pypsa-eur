@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: : 2017-2020 The PyPSA-Eur Authors
 #
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: MIT
 
 from os.path import normpath, exists
 from shutil import copyfile
@@ -67,7 +67,14 @@ if config['enable'].get('retrieve_databundle', True):
         script: 'scripts/retrieve_databundle.py'
 
 
+rule retrieve_load_data:
+    input: HTTP.remote("data.open-power-system-data.org/time_series/2019-06-05/time_series_60min_singleindex.csv", keep_local=True, static=True)
+    output: "data/load_raw.csv"
+    shell: "mv {input} {output}"
+
+
 rule build_load_data:
+    input: "data/load_raw.csv"
     output: "resources/load.csv"
     log: "logs/build_load_data.log"
     script: 'scripts/build_load_data.py'
@@ -153,7 +160,7 @@ if config['enable'].get('build_cutout', False):
 
 if config['enable'].get('retrieve_cutout', True):
     rule retrieve_cutout:
-        input: HTTP.remote("zenodo.org/record/4709858/files/{cutout}.nc", keep_local=True)
+        input: HTTP.remote("zenodo.org/record/4709858/files/{cutout}.nc", keep_local=True, static=True)
         output: "cutouts/{cutout}.nc"
         shell: "mv {input} {output}"
 
@@ -170,7 +177,7 @@ if config['enable'].get('build_natura_raster', False):
 
 if config['enable'].get('retrieve_natura_raster', True):
     rule retrieve_natura_raster:
-        input: HTTP.remote("zenodo.org/record/4706686/files/natura.tiff", keep_local=True)
+        input: HTTP.remote("zenodo.org/record/4706686/files/natura.tiff", keep_local=True, static=True)
         output: "resources/natura.tiff"
         shell: "mv {input} {output}"
 
@@ -239,7 +246,8 @@ rule simplify_network:
         network='networks/elec_s{simpl}.nc',
         regions_onshore="resources/regions_onshore_elec_s{simpl}.geojson",
         regions_offshore="resources/regions_offshore_elec_s{simpl}.geojson",
-        busmap='resources/busmap_elec_s{simpl}.csv'
+        busmap='resources/busmap_elec_s{simpl}.csv',
+        connection_costs='resources/connection_costs_s{simpl}.csv'
     log: "logs/simplify_network/elec_s{simpl}.log"
     benchmark: "benchmarks/simplify_network/elec_s{simpl}"
     threads: 1
@@ -360,7 +368,6 @@ def input_make_summary(w):
         ll = w.ll
     return ([COSTS] +
             expand("results/networks/elec_s{simpl}_{clusters}_ec_l{ll}_{opts}.nc",
-                   network=w.network,
                    ll=ll,
                    **{k: config["scenario"][k] if getattr(w, k) == "all" else getattr(w, k)
                       for k in ["simpl", "clusters", "opts"]}))

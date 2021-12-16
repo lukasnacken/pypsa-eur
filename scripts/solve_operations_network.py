@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: : 2017-2020 The PyPSA-Eur Authors
 #
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: MIT
 
 """
 Solves linear optimal dispatch in hourly resolution
@@ -81,10 +81,15 @@ def set_parameters_from_optimized(n, n_optim):
         n_optim.generators['p_nom_opt'].reindex(gen_extend_i, fill_value=0.)
     n.generators.loc[gen_extend_i, 'p_nom_extendable'] = False
 
-    stor_extend_i = n.storage_units.index[n.storage_units.p_nom_extendable]
-    n.storage_units.loc[stor_extend_i, 'p_nom'] = \
-        n_optim.storage_units['p_nom_opt'].reindex(stor_extend_i, fill_value=0.)
-    n.storage_units.loc[stor_extend_i, 'p_nom_extendable'] = False
+    stor_units_extend_i = n.storage_units.index[n.storage_units.p_nom_extendable]
+    n.storage_units.loc[stor_units_extend_i, 'p_nom'] = \
+        n_optim.storage_units['p_nom_opt'].reindex(stor_units_extend_i, fill_value=0.)
+    n.storage_units.loc[stor_units_extend_i, 'p_nom_extendable'] = False
+
+    stor_extend_i = n.stores.index[n.stores.e_nom_extendable]
+    n.stores.loc[stor_extend_i, 'e_nom'] = \
+        n_optim.stores['e_nom_opt'].reindex(stor_extend_i, fill_value=0.)
+    n.stores.loc[stor_extend_i, 'e_nom_extendable'] = False
 
     return n
 
